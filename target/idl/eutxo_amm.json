@@ -1,0 +1,976 @@
+{
+  "address": "6cmEegP2W9pBaP2CB7ZkyupZxM8NZUwU3NiqSE7ci5iR",
+  "metadata": {
+    "name": "eutxo_amm",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Constant-product AMM for bridged eUTXO-chain assets on Solana"
+  },
+  "instructions": [
+    {
+      "name": "collect_protocol_fees",
+      "discriminator": [
+        22,
+        67,
+        23,
+        98,
+        150,
+        178,
+        70,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_a",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_b",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_a"
+        },
+        {
+          "name": "mint_b"
+        },
+        {
+          "name": "vault_a",
+          "writable": true
+        },
+        {
+          "name": "vault_b",
+          "writable": true
+        },
+        {
+          "name": "fee_destination_a",
+          "docs": [
+            "Destination for collected token-A fees. Validated only on mint —",
+            "ownership can be any account the admin (e.g. a DAO treasury",
+            "multisig) controls."
+          ],
+          "writable": true
+        },
+        {
+          "name": "fee_destination_b",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit",
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_a",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_b",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_a"
+        },
+        {
+          "name": "mint_b"
+        },
+        {
+          "name": "vault_a",
+          "writable": true
+        },
+        {
+          "name": "vault_b",
+          "writable": true
+        },
+        {
+          "name": "lp_mint",
+          "writable": true
+        },
+        {
+          "name": "depositor_token_a",
+          "docs": [
+            "Depositor's token A account. Required even for SingleSidedB deposits",
+            "(Anchor needs a fixed account set per instruction); unused token",
+            "movement is simply zero in that case."
+          ],
+          "writable": true
+        },
+        {
+          "name": "depositor_token_b",
+          "writable": true
+        },
+        {
+          "name": "depositor_lp_token",
+          "docs": [
+            "Depositor's LP token account (legacy SPL Token, see initialize_pool",
+            "for rationale). Created if it doesn't exist yet."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "depositor"
+              },
+              {
+                "kind": "account",
+                "path": "lp_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "lp_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "Token program governing mint_a / mint_b — may be legacy SPL Token",
+            "or Token-2022 depending on the pool's configured mints."
+          ]
+        },
+        {
+          "name": "lp_token_program",
+          "docs": [
+            "Token program governing the LP mint specifically — always legacy",
+            "SPL Token (see initialize_pool)."
+          ]
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "mode",
+          "type": {
+            "defined": {
+              "name": "DepositMode"
+            }
+          }
+        },
+        {
+          "name": "amount_a",
+          "type": "u64"
+        },
+        {
+          "name": "amount_b",
+          "type": "u64"
+        },
+        {
+          "name": "min_lp_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_pool",
+      "docs": [
+        "Create a new pool for a (mint_a, mint_b) pair. Mints must be passed",
+        "in canonical order (mint_a < mint_b by pubkey) so a pair maps to",
+        "exactly one pool address.",
+        "",
+        "`fee_bps`: total swap fee in basis points (e.g. 30 = 0.30%).",
+        "`protocol_fee_share_bps`: share of that fee routed to protocol",
+        "revenue rather than left for LPs, in bps of the fee itself",
+        "(e.g. 1000 = 10% of the fee).",
+        "`single_sided_deposits_enabled`: whether this pool accepts",
+        "one-sided deposits — recommended `true` for thin/bridged-asset",
+        "pools, `false` for deep majors where paired deposits are the norm."
+      ],
+      "discriminator": [
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "The address that will administer this pool (collect protocol fees,",
+            "pause/unpause). In production this MUST be a multisig or DAO",
+            "address, never a single hot wallet — pass that address here",
+            "explicitly rather than defaulting to `payer`."
+          ]
+        },
+        {
+          "name": "mint_a"
+        },
+        {
+          "name": "mint_b"
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint_a"
+              },
+              {
+                "kind": "account",
+                "path": "mint_b"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_a",
+          "docs": [
+            "Pool-owned vault for token A. The pool PDA is the authority."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_b",
+          "docs": [
+            "Pool-owned vault for token B. The pool PDA is the authority."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lp_mint",
+          "docs": [
+            "LP share mint. Always a plain SPL Token mint (not Token-2022) for",
+            "simplicity and maximum downstream compatibility (wallets, explorers,",
+            "and Jupiter's LP-token handling all assume legacy SPL for LP",
+            "tokens) — this only governs the LP receipt token, not the underlying",
+            "pooled assets, which can still be Token-2022 mints."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "protocol_fee_share_bps",
+          "type": "u16"
+        },
+        {
+          "name": "single_sided_deposits_enabled",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_paused",
+      "discriminator": [
+        91,
+        60,
+        125,
+        192,
+        176,
+        225,
+        166,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_a",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_b",
+                "account": "Pool"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "swap",
+      "discriminator": [
+        248,
+        198,
+        158,
+        145,
+        225,
+        117,
+        135,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_a",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_b",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_a"
+        },
+        {
+          "name": "mint_b"
+        },
+        {
+          "name": "vault_a",
+          "writable": true
+        },
+        {
+          "name": "vault_b",
+          "writable": true
+        },
+        {
+          "name": "trader_token_a",
+          "writable": true
+        },
+        {
+          "name": "trader_token_b",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "direction",
+          "type": {
+            "defined": {
+              "name": "SwapDirection"
+            }
+          }
+        },
+        {
+          "name": "amount_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_amount_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "withdrawer",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_a",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint_b",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_a"
+        },
+        {
+          "name": "mint_b"
+        },
+        {
+          "name": "vault_a",
+          "writable": true
+        },
+        {
+          "name": "vault_b",
+          "writable": true
+        },
+        {
+          "name": "lp_mint",
+          "writable": true
+        },
+        {
+          "name": "withdrawer_token_a",
+          "writable": true
+        },
+        {
+          "name": "withdrawer_token_b",
+          "writable": true
+        },
+        {
+          "name": "withdrawer_lp_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "lp_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "lp_amount",
+          "type": "u64"
+        },
+        {
+          "name": "min_amount_a_out",
+          "type": "u64"
+        },
+        {
+          "name": "min_amount_b_out",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Pool",
+      "discriminator": [
+        241,
+        154,
+        109,
+        4,
+        17,
+        177,
+        109,
+        188
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "IdenticalMints",
+      "msg": "Token A mint and token B mint must differ"
+    },
+    {
+      "code": 6001,
+      "name": "MintsNotCanonicalOrder",
+      "msg": "Mints must be provided in canonical order (mint_a < mint_b)"
+    },
+    {
+      "code": 6002,
+      "name": "FeeTooHigh",
+      "msg": "Fee in basis points must be less than 10000 (100%)"
+    },
+    {
+      "code": 6003,
+      "name": "ProtocolFeeShareTooHigh",
+      "msg": "Protocol fee share in basis points must be less than or equal to 10000"
+    },
+    {
+      "code": 6004,
+      "name": "ZeroDepositAmount",
+      "msg": "Deposit amounts must be greater than zero"
+    },
+    {
+      "code": 6005,
+      "name": "ZeroSwapAmount",
+      "msg": "Swap input amount must be greater than zero"
+    },
+    {
+      "code": 6006,
+      "name": "SingleSidedDepositsDisabled",
+      "msg": "This pool does not allow single-sided deposits"
+    },
+    {
+      "code": 6007,
+      "name": "ZeroLpTokensMinted",
+      "msg": "Resulting LP token amount is zero — deposit too small relative to pool size"
+    },
+    {
+      "code": 6008,
+      "name": "SlippageExceeded",
+      "msg": "Slippage tolerance exceeded: output amount below minimum specified"
+    },
+    {
+      "code": 6009,
+      "name": "ExcessiveInputRequired",
+      "msg": "Slippage tolerance exceeded: required input above maximum specified"
+    },
+    {
+      "code": 6010,
+      "name": "InsufficientLiquidity",
+      "msg": "Pool reserves cannot be zero for this operation"
+    },
+    {
+      "code": 6011,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6012,
+      "name": "MathUnderflow",
+      "msg": "Arithmetic underflow"
+    },
+    {
+      "code": 6013,
+      "name": "PoolPaused",
+      "msg": "Pool is currently paused for swaps and deposits"
+    },
+    {
+      "code": 6014,
+      "name": "ZeroLpBurnAmount",
+      "msg": "LP token amount to burn must be greater than zero"
+    },
+    {
+      "code": 6015,
+      "name": "InsufficientLpBalance",
+      "msg": "Insufficient LP token balance for this withdrawal"
+    },
+    {
+      "code": 6016,
+      "name": "Unauthorized",
+      "msg": "Only the pool admin may perform this action"
+    },
+    {
+      "code": 6017,
+      "name": "NoFeesToCollect",
+      "msg": "No protocol fees available to collect"
+    },
+    {
+      "code": 6018,
+      "name": "MintMismatch",
+      "msg": "Provided token mint does not match this pool's configured mint"
+    }
+  ],
+  "types": [
+    {
+      "name": "DepositMode",
+      "docs": [
+        "Deposit mode, passed by the client to select paired vs. single-sided.",
+        "Encoded as an instruction argument rather than two separate instructions",
+        "so the account context (and therefore the IDL surface) stays identical",
+        "regardless of mode — simpler clients, simpler CPI callers."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Paired"
+          },
+          {
+            "name": "SingleSidedA"
+          },
+          {
+            "name": "SingleSidedB"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pool",
+      "docs": [
+        "Core pool state, stored in a PDA.",
+        "This account is both the data store and, via PDA signing, the",
+        "authority over the two reserve token accounts and the LP mint."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed for this pool's PDA, cached to avoid re-deriving on every ix."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "mint_a",
+            "docs": [
+              "Mint of token A (by convention, store the lexicographically smaller",
+              "mint pubkey as token A — enforced at init time — so a given pair",
+              "always resolves to exactly one pool address, never two)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint_b",
+            "docs": [
+              "Mint of token B."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_a",
+            "docs": [
+              "Pool-owned reserve token account holding token A."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_b",
+            "docs": [
+              "Pool-owned reserve token account holding token B."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "lp_mint",
+            "docs": [
+              "Mint for this pool's LP (liquidity provider) share token.",
+              "The pool PDA is the mint authority."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "docs": [
+              "Swap fee in basis points (1 bps = 0.01%). E.g. 30 = 0.30%."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "protocol_fee_share_bps",
+            "docs": [
+              "Protocol fee cut of the swap fee, in basis points of the fee itself",
+              "(not of the trade). E.g. 1000 = 10% of the 0.30% fee, i.e. 0.03%",
+              "of trade volume, accrues to the protocol; the rest stays in the pool",
+              "for LPs."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "protocol_fees_a",
+            "docs": [
+              "Accrued protocol fees, denominated in token A, awaiting withdrawal."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "protocol_fees_b",
+            "docs": [
+              "Accrued protocol fees, denominated in token B, awaiting withdrawal."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Authority allowed to withdraw protocol fees and pause the pool.",
+              "Set to a multisig/DAO address in production, never a single hot key."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Emergency pause switch. When true, swap and deposit are blocked;",
+              "withdraw always remains available so LPs are never locked out",
+              "of their own funds."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "single_sided_deposits_enabled",
+            "docs": [
+              "Whether this pool allows single-sided deposits (deposit only one",
+              "of the two assets). Disabled by default; enabled per-pool by the",
+              "admin for thin/bridged-asset pools where requiring a matched pair",
+              "would be a bad UX bar for first liquidity."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "_reserved",
+            "docs": [
+              "Reserved space for future fields so this account can grow without",
+              "a breaking migration. Shrink this as fields are added."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapDirection",
+      "docs": [
+        "Which direction the swap goes. Encoded explicitly rather than inferred",
+        "from account ordering, so the instruction's behavior is unambiguous",
+        "from the IDL alone."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "AToB"
+          },
+          {
+            "name": "BToA"
+          }
+        ]
+      }
+    }
+  ]
+}

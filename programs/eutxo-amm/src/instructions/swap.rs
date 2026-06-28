@@ -130,7 +130,7 @@ pub fn handler(
     // Trader -> pool vault. Authority is the trader's own signature.
     token_interface::transfer_checked(
         CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program.key(),
             TransferChecked {
                 from: from_account,
                 mint: in_mint,
@@ -156,7 +156,7 @@ pub fn handler(
 
     token_interface::transfer_checked(
         CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program.key(),
             TransferChecked {
                 from: from_vault,
                 mint: out_mint,

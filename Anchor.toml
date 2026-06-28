@@ -1,12 +1,12 @@
 [toolchain]
-anchor_version = "0.30.1"
+anchor_version = "1.1.2"
 
 [features]
 seeds = true
 skip-lint = false
 
 [programs.localnet]
-eutxo_amm = "EuTXoAMM11111111111111111111111111111111"
+eutxo_amm = "6cmEegP2W9pBaP2CB7ZkyupZxM8NZUwU3NiqSE7ci5iR"
 
 [registry]
 url = "https://api.apr.dev"

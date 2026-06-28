@@ -24,6 +24,7 @@ pub enum DepositMode {
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
+    #[account(mut)]
     pub depositor: Signer<'info>,
 
     #[account(
@@ -145,7 +146,7 @@ pub fn handler(
     if transfer_a > 0 {
         token_interface::transfer_checked(
             CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.depositor_token_a.to_account_info(),
                     mint: ctx.accounts.mint_a.to_account_info(),
@@ -161,7 +162,7 @@ pub fn handler(
     if transfer_b > 0 {
         token_interface::transfer_checked(
             CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.depositor_token_b.to_account_info(),
                     mint: ctx.accounts.mint_b.to_account_info(),
@@ -182,7 +183,7 @@ pub fn handler(
 
     token_interface::mint_to(
         CpiContext::new_with_signer(
-            ctx.accounts.lp_token_program.to_account_info(),
+            ctx.accounts.lp_token_program.key(),
             MintTo {
                 mint: ctx.accounts.lp_mint.to_account_info(),
                 to: ctx.accounts.depositor_lp_token.to_account_info(),

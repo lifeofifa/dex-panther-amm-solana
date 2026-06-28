@@ -79,7 +79,7 @@ pub fn handler(
     // themselves (they own the LP tokens being burned), not the pool PDA.
     token_interface::burn(
         CpiContext::new(
-            ctx.accounts.lp_token_program.to_account_info(),
+            ctx.accounts.lp_token_program.key(),
             Burn {
                 mint: ctx.accounts.lp_mint.to_account_info(),
                 from: ctx.accounts.withdrawer_lp_token.to_account_info(),
@@ -102,7 +102,7 @@ pub fn handler(
     if amount_a > 0 {
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.vault_a.to_account_info(),
                     mint: ctx.accounts.mint_a.to_account_info(),
@@ -119,7 +119,7 @@ pub fn handler(
     if amount_b > 0 {
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.vault_b.to_account_info(),
                     mint: ctx.accounts.mint_b.to_account_info(),

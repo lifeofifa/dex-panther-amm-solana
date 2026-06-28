@@ -88,7 +88,7 @@ pub fn collect_protocol_fees_handler(ctx: Context<CollectProtocolFees>) -> Resul
     if amount_a > 0 {
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.vault_a.to_account_info(),
                     mint: ctx.accounts.mint_a.to_account_info(),
@@ -105,7 +105,7 @@ pub fn collect_protocol_fees_handler(ctx: Context<CollectProtocolFees>) -> Resul
     if amount_b > 0 {
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program.key(),
                 TransferChecked {
                     from: ctx.accounts.vault_b.to_account_info(),
                     mint: ctx.accounts.mint_b.to_account_info(),
