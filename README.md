@@ -4,9 +4,21 @@ A constant-product (Uniswap-v2-style) AMM for Solana, built in Anchor,
 designed for pools pairing bridged eUTXO-chain assets (Ergo/Cardano-native
 tokens arriving via Rosen Bridge) against SOL/USDC/majors.
 
-**This was written without a Rust/Solana toolchain available to compile or
-test it.** It has not been built, deployed, or run. Treat it as a careful
-first draft, not working software, until you've taken the steps below.
+## Build & test status
+
+| Step | Status |
+|------|--------|
+| `anchor build` (Anchor 1.1.2, Rust) | **Passing** — compiles clean |
+| `cargo test` (Rust unit tests — math module) | Not yet run |
+| `anchor test` (integration tests against local validator) | Not yet run |
+| Security audit | Not yet done — required before mainnet |
+
+The program compiles and a real program keypair has been generated
+(`6cmEegP2W9pBaP2CB7ZkyupZxM8NZUwU3NiqSE7ci5iR`). Integration tests
+have not been executed — this is a known gap documented here for
+developer reviewers. The Solana integration is parked until Rosen Bridge
+adds Solana as a supported network, at which point full test coverage
+should be completed before any deployment.
 
 ## What's here
 
